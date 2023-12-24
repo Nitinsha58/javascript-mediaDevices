@@ -6,22 +6,44 @@
     <title>Document</title>
 
     <style>
+        *,html {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            padding: 1rem;
+            background-color: rgb(72, 72, 255);
+        }
+
+        .container {
+            display: flex;
+            justify-content: space-between;
+        }
+
         video, canvas {
-            width: 100%;
+            width: calc(100% / 2 - 4rem);
+            max-width: 50%;
             height: auto;
         }
     </style>
 
 </head>
 <body>
-    <video id="video" autoplay></video>
+    <div class="btn-container">
+        <select id="cameraSelect"></select>
+        <button onclick="playVideo()">Play</button>
+        <button onclick="stopVideo()">Stop</button>
+        <button onclick="captureImage()">Capture</button>
+    </div>
 
-    <select id="cameraSelect"></select>
-    <button onclick="playVideo()">Play</button>
-    <button onclick="stopVideo()">Stop</button>
-    <button onclick="captureImage()">Capture</button>
+    <div class="container">
+        <video id="video" autoplay></video>
+        <canvas></canvas>
+    </div>
 
-    <canvas></canvas>
+
 
     <script>
         const video = document.querySelector("video");
@@ -29,7 +51,9 @@
         const cameraSelect = document.getElementById("cameraSelect");
         const constraints = {
             audio: false,
-            video: true,
+            video: {
+                facingMode: "environment",
+            },
         };
 
         let stream;
