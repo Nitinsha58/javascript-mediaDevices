@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+
+    <style>
+        video, canvas {
+            width: 100%;
+            height: auto;
+        }
+    </style>
+
+</head>
+<body>
+    <video id="video" autoplay></video>
+
+    <select id="cameraSelect"></select>
+    <button onclick="playVideo()">Play</button>
+    <button onclick="stopVideo()">Stop</button>
+    <button onclick="captureImage()">Capture</button>
+
+    <canvas></canvas>
+
+    <script>
+        const video = document.querySelector("video");
+        const canvas = document.querySelector("canvas");
+        const cameraSelect = document.getElementById("cameraSelect");
+        const constraints = {
+            audio: false,
+            video: true,
+        };
+
+        let stream;
+
+        const populateCameraList = async () => {
+            try {
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                console.log(devices)
+                const videoDevices = devices.filter(device => device.kind === "videoinput");
+
+                videoDevices.forEach(device => {
+                    const option = document.createElement("option");
+                    option.value = device.deviceId;
+                    option.text = device.label || `Camera ${cameraSelect.options.length + 1}`;
+                    cameraSelect.appendChild(option);
+                });
+            } catch (error) {
+                console.error("Error enumerating devices:", error);
+            }
+        }; 
+
+
+        const playVideo = () => {
+            const selectedDeviceid = cameraSelect.value;
+            constraints.video.deviceId = selectedDeviceid 
+
+            navigator.mediaDevices
+            .getUserMedia(constraints)
+            .then((mediaStream) => {
+                const videoTracks = mediaStream.getVideoTracks();
+                console.log("Got stream with constraints:", constraints);
+                console.log(`Using video device: ${videoTracks[0].label}`);
+                mediaStream.onremovetrack = () => {
+                    console.log("Stream ended");
+                };
+                stream = mediaStream;
+                video.srcObject = mediaStream;
+
+
+                // Set canvas dimensions based on video resolution
+                const {width, height} = videoTracks[0].getSettings();
+                canvas.width = width;
+                canvas.height = height;
+            })
+            .catch((error) => {
+                if (error.name === "OverconstrainedError") {
+                    console.error(
+                        `The resolution ${constraints.video.width.exact}x${constraints.video.height.exact} px is not supported by your device.`,
+                    );
+                    } else if (error.name === "NotAllowedError") {
+                        console.error(
+                            "You need to grant this page permission to access your camera and microphone.",
+                        );
+                    } else {
+                        console.error(`getUserMedia error: ${error.name}`, error);
+                }
+            });
+        };
+
+
+        const stopVideo = () => {
+            const stream = video.srcObject;
+            const tracks = stream.getTracks();
+
+            tracks.forEach(function (track) {
+                track.stop();
+            });
+
+            video.srcObject = null;
+        };
+
+
+    const captureImage = () => {
+        if (stream) {
+            const track = stream.getVideoTracks()[0];
+            let imageCapture = new ImageCapture(track);
+            
+            imageCapture.takePhoto()
+                .then(blob => {
+                    const img = new Image();
+                    img.src = URL.createObjectURL(blob);
+                    img.onload = () => {
+                        // Make sure to get the 2D context of the canvas
+                        const context = canvas.getContext('2d');
+                        // Clear the canvas before drawing the new image
+                        context.clearRect(0, 0, canvas.width, canvas.height);
+                        // Draw the image on the canvas
+                        context.drawImage(img, 0, 0, canvas.width, canvas.height);
+                        // Revoke the object URL to free up resources
+                        URL.revokeObjectURL(img.src);
+                    };
+                })
+                .catch(error => console.error('Error taking photo:', error));
+        } else {
+            console.log("No video stream available.");
+        }
+    };
+
+    populateCameraList();
+
+    </script>
+</body>
+</html>
