@@ -23,8 +23,9 @@
         }
 
         video, canvas {
-            width: calc(100% / 2 - 4rem);
-            max-width: 50%;
+            /* width: calc(100% / 2 - 4rem); */
+            width: 100%;
+            /* max-width: 50%; */
             height: auto;
         }
     </style>
@@ -36,6 +37,7 @@
         <button onclick="playVideo()">Play</button>
         <button onclick="stopVideo()">Stop</button>
         <button onclick="captureImage()">Capture</button>
+        <button onclick="switchCamera()">Switch</button>
     </div>
 
     <div class="container">
@@ -150,6 +152,17 @@
         } else {
             console.log("No video stream available.");
         }
+    };
+
+    const switchCamera = () => {
+        const videoTracks = stream.getVideoTracks();
+        const videoTrack = videoTracks[0];
+        const constraints = videoTrack.getConstraints();
+        const newConstraints = {
+            ...constraints,
+            facingMode: constraints.facingMode === "user" ? "environment" : "user",
+        };
+        videoTrack.applyConstraints(newConstraints);
     };
 
     populateCameraList();
