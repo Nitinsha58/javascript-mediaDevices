@@ -19,13 +19,13 @@
 
         .container {
             display: flex;
-            justify-content: space-between;
+            flex-direction: column;
+            align-items: center;
         }
 
         video, canvas {
-            /* width: calc(100% / 2 - 4rem); */
+            margin: 1rem 0;
             width: 100%;
-            /* max-width: 50%; */
             height: auto;
         }
     </style>
@@ -51,6 +51,8 @@
         const video = document.querySelector("video");
         const canvas = document.querySelector("canvas");
         const cameraSelect = document.getElementById("cameraSelect");
+        let cameraChoice = 0;
+        let cameraList = [];
         const constraints = {
             audio: false,
             video: {
@@ -70,6 +72,10 @@
                     const option = document.createElement("option");
                     option.value = device.deviceId;
                     option.text = device.label || `Camera ${cameraSelect.options.length + 1}`;
+                    cameraList.push({
+                        deviceId: device.deviceId,
+                        label: option.text,
+                    });
                     cameraSelect.appendChild(option);
                 });
             } catch (error) {
@@ -79,7 +85,8 @@
 
 
         const playVideo = () => {
-            const selectedDeviceid = cameraSelect.value;
+            const selectedDeviceid = cameraList[cameraChoice].deviceId;
+            // const selectedDeviceid = cameraSelect.value;
             constraints.video.deviceId = selectedDeviceid 
 
             navigator.mediaDevices
@@ -155,15 +162,12 @@
     };
 
     const switchCamera = () => {
-        const videoTracks = stream.getVideoTracks();
-        const videoTrack = videoTracks[0];
-        const constraints = videoTrack.getConstraints();
-        const newConstraints = {
-            ...constraints,
-            facingMode: constraints.facingMode === "user" ? "environment" : "user",
-        };
-        videoTrack.applyConstraints(newConstraints);
-    };
+            cameraChoice = (cameraChoice + 1) % cameraList.length;
+            if (stream) {
+                stopVideo();
+                playVideo();
+            }
+        }
 
     populateCameraList();
 
